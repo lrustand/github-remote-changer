@@ -106,7 +106,7 @@ for REPODIR in $REPOS; do
 		fi
 		if [[ ! -z $PUSHURL ]]; then
 			[[ $VERBOSITY -ge 1 ]] && echo "Changing push url for $REPONAME $REMOTENAME to $PUSHURL"
-			git remote set-url --push $REMOTENAME $FETCHURL
+			git remote set-url --push $REMOTENAME $PUSHURL
 		fi
 	done
 done
