@@ -22,36 +22,38 @@ VERBOSITY=1
 # Parse commandline options
 while [[ -n $1 ]]; do
 	case "$1" in
-		-f|--fetch)
-			UPDATEFETCH=true
-			;;
-		-F|--fetch-only)
+		--fetch)   UPDATEFETCH=true ;;
+		--fetch-only)
 			UPDATEFETCH=true
 			UPDATEPUSH=false
 			;;
-		-h|--help)
-			usage
-			exit 0
-			;;
-		-H|--https)
-			PROTOCOL=https
-			;;
-		-s|--ssh)
-			PROTOCOL=ssh
-			;;
-		-q|--quiet)
-			((VERBOSITY--))
-			;;
-		-v|--verbose)
-			((VERBOSITY++))
-			;;
+		--help)    usage; exit 0 ;;
+		--https)   PROTOCOL=https ;;
+		--ssh)     PROTOCOL=ssh ;;
+		--quiet)   ((VERBOSITY--)) ;;
+		--verbose) ((VERBOSITY++)) ;;
 		-*)
-			echo "$1: unknown option"
-			echo "See $(basename $0) --help for help"
-			exit 1
+			while read -n 1 opt; do
+				case "$opt" in
+					f)  UPDATEFETCH=true ;;
+					F)
+						UPDATEFETCH=true
+						UPDATEPUSH=false
+						;;
+					h)  usage; exit 0 ;;
+					H)  PROTOCOL=https ;;
+					s)  PROTOCOL=ssh ;;
+					q)  ((VERBOSITY--)) ;;
+					v)  ((VERBOSITY++)) ;;
+					"") ;;
+					*)
+						echo "-$opt: unknown option"
+						echo "See $(basename $0) --help for help"
+						exit 1
+				esac
+			done <<< "${1:1}"
 			;;
-		*)
-			DIRS+=" $1"
+		*) DIRS+=" $1"
 	esac
 	shift
 done
