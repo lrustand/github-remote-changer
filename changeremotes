@@ -1,0 +1,101 @@
+#!/bin/bash
+
+usage() {
+	echo "Usage: $(basename $0) [OPTION]... DIRECTORY..."
+	echo
+	echo "Options:"
+	echo "  -f, --fetch       also change fetch urls (default is to change only puh urls)"
+	echo "  -F, --fetch-only  only change fetch urls"
+	echo "  -h, --help        print this help message"
+	echo "  -H, --https       change remotes to https"
+	echo "  -s, --ssh         change remotes to ssh (default)"
+}
+
+#Defaults
+UPDATEPUSH=true
+UPDATEFETCH=false
+PROTOCOL=ssh
+
+# Parse commandline options
+while [[ -n $1 ]]; do
+	case "$1" in
+		-f|--fetch)
+			UPDATEFETCH=true
+			;;
+		-F|--fetch-only)
+			UPDATEFETCH=true
+			UPDATEPUSH=false
+			;;
+		-h|--help)
+			usage
+			exit 0
+			;;
+		-H|--https)
+			PROTOCOL=https
+			;;
+		-s|--ssh)
+			PROTOCOL=ssh
+			;;
+		-*)
+			echo "$1: unknown option"
+			echo "See $(basename $0) --help for help"
+			exit 1
+			;;
+		*)
+			DIRS+=" $1"
+	esac
+	shift
+done
+
+if [[ -z $DIRS ]]; then
+	usage
+	exit 1
+fi
+
+
+REPOS=$(\
+	for DIR in $DIRS; do \
+		find $DIR -name ".git" 2>/dev/null -exec dirname '{}' +; \
+	done)
+
+for REPODIR in $REPOS; do
+	cd $REPODIR
+	REMOTES=$(git remote -v)
+	echo "Entering $REPODIR"
+
+	IFS=$'\n'
+	for REMOTE in $REMOTES; do
+		REMOTENAME=$(echo $REMOTE | awk '{print $1}')
+		URL=$(echo $REMOTE | awk '{print $2}')
+		TYPE=$(echo $REMOTE | awk '{print $3}')
+		USERNAME=$(echo $URL | cut -d '/' -f 4)
+		REPONAME=$(echo $URL | cut -d '/' -f 5)
+		FETCHURL=
+		PUSHURL=
+
+		if [[ $URL =~ ^http(s)?://github.com/ && $PROTOCOL == "ssh" ]]; then
+			if [[ $TYPE == "(fetch)" && $UPDATEFETCH == true ]]; then
+				FETCHURL="ssh://git@github.com/$USERNAME/$REPONAME"
+			fi
+			if [[ $TYPE == "(push)" && $UPDATEPUSH == true ]]; then
+				PUSHURL="ssh://git@github.com/$USERNAME/$REPONAME"
+			fi
+		elif [[ $URL =~ ^ssh://git@github.com/ && $PROTOCOL == "https" ]]; then
+			if [[ $TYPE == "(fetch)" && $UPDATEFETCH == true ]]; then
+				FETCHURL="https://github.com/$USERNAME/$REPONAME"
+			fi
+			if [[ $TYPE == "(push)" && $UPDATEPUSH == true ]]; then
+				PUSHURL="https://github.com/$USERNAME/$REPONAME"
+			fi
+		fi
+
+		if [[ ! -z $FETCHURL ]]; then
+			echo "Changing fetch url for $REPONAME $REMOTENAME to $FETCHURL"
+			git remote set-url $REMOTENAME $FETCHURL
+		fi
+		if [[ ! -z $PUSHURL ]]; then
+			echo "Changing push url for $REPONAME to $PUSHURL"
+			git remote set-url --push $REMOTENAME $FETCHURL
+		fi
+	done
+done
