@@ -94,7 +94,7 @@ for REPODIR in $REPOS; do
 			git remote set-url $REMOTENAME $FETCHURL
 		fi
 		if [[ ! -z $PUSHURL ]]; then
-			echo "Changing push url for $REPONAME to $PUSHURL"
+			echo "Changing push url for $REPONAME $REMOTENAME to $PUSHURL"
 			git remote set-url --push $REMOTENAME $FETCHURL
 		fi
 	done
