@@ -10,7 +10,7 @@ usage() {
 	echo "  -H, --https       change remotes to https"
 	echo "  -s, --ssh         change remotes to ssh (default)"
 	echo "  -v, --verbose     increase verbosity"
-	echo "  -q, --quiet       don't print anything"
+	echo "  -q, --quiet       decrease verbosity"
 }
 
 #Defaults
@@ -40,10 +40,10 @@ while [[ -n $1 ]]; do
 			PROTOCOL=ssh
 			;;
 		-q|--quiet)
-			VERBOSITY=0
+			((VERBOSITY--))
 			;;
 		-v|--verbose)
-			VERBOSITY=2
+			((VERBOSITY++))
 			;;
 		-*)
 			echo "$1: unknown option"
