@@ -9,12 +9,15 @@ usage() {
 	echo "  -h, --help        print this help message"
 	echo "  -H, --https       change remotes to https"
 	echo "  -s, --ssh         change remotes to ssh (default)"
+	echo "  -v, --verbose     increase verbosity"
+	echo "  -q, --quiet       don't print anything"
 }
 
 #Defaults
 UPDATEPUSH=true
 UPDATEFETCH=false
 PROTOCOL=ssh
+VERBOSITY=1
 
 # Parse commandline options
 while [[ -n $1 ]]; do
@@ -35,6 +38,12 @@ while [[ -n $1 ]]; do
 			;;
 		-s|--ssh)
 			PROTOCOL=ssh
+			;;
+		-q|--quiet)
+			VERBOSITY=0
+			;;
+		-v|--verbose)
+			VERBOSITY=2
 			;;
 		-*)
 			echo "$1: unknown option"
@@ -61,7 +70,7 @@ REPOS=$(\
 for REPODIR in $REPOS; do
 	cd $REPODIR
 	REMOTES=$(git remote -v)
-	echo "Entering $REPODIR"
+	[[ $VERBOSITY -ge 2 ]] && echo "Entering $REPODIR"
 
 	IFS=$'\n'
 	for REMOTE in $REMOTES; do
@@ -90,11 +99,11 @@ for REPODIR in $REPOS; do
 		fi
 
 		if [[ ! -z $FETCHURL ]]; then
-			echo "Changing fetch url for $REPONAME $REMOTENAME to $FETCHURL"
+			[[ $VERBOSITY -ge 1 ]] && echo "Changing fetch url for $REPONAME $REMOTENAME to $FETCHURL"
 			git remote set-url $REMOTENAME $FETCHURL
 		fi
 		if [[ ! -z $PUSHURL ]]; then
-			echo "Changing push url for $REPONAME $REMOTENAME to $PUSHURL"
+			[[ $VERBOSITY -ge 1 ]] && echo "Changing push url for $REPONAME $REMOTENAME to $PUSHURL"
 			git remote set-url --push $REMOTENAME $FETCHURL
 		fi
 	done
