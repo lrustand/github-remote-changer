@@ -63,11 +63,18 @@ if [[ -z $DIRS ]]; then
 	exit 1
 fi
 
-
-REPOS=$(\
-	for DIR in $DIRS; do \
-		find $DIR -name ".git" 2>/dev/null -exec dirname '{}' +; \
-	done)
+REPOS=
+for DIR in $DIRS; do
+	r=$(find $DIR -name '.git' 2>/dev/null -exec realpath '{}' + | \
+			sed -e 's/\/\.git//')
+	REPOS+="$r "
+	if [[ $VERBOSITY -ge 3 ]]; then
+		echo "Looking for repos in $DIR"
+		for d in $r; do
+			echo "Found $d"
+		done
+	fi
+done
 
 for REPODIR in $REPOS; do
 	cd $REPODIR
@@ -75,6 +82,7 @@ for REPODIR in $REPOS; do
 	[[ $VERBOSITY -ge 2 ]] && echo "Entering $REPODIR"
 
 	IFS=$'\n'
+	DONESOMETHING=false
 	for REMOTE in $REMOTES; do
 		REMOTENAME=$(echo $REMOTE | awk '{print $1}')
 		URL=$(echo $REMOTE | awk '{print $2}')
@@ -102,11 +110,14 @@ for REPODIR in $REPOS; do
 
 		if [[ ! -z $FETCHURL ]]; then
 			[[ $VERBOSITY -ge 1 ]] && echo "Changing fetch url for $REPONAME $REMOTENAME to $FETCHURL"
+			DONESOMETHING=true
 			git remote set-url $REMOTENAME $FETCHURL
 		fi
 		if [[ ! -z $PUSHURL ]]; then
 			[[ $VERBOSITY -ge 1 ]] && echo "Changing push url for $REPONAME $REMOTENAME to $PUSHURL"
+			DONESOMETHING=true
 			git remote set-url --push $REMOTENAME $PUSHURL
 		fi
 	done
+	[[ "$DONESOMETHING" == false ]] && echo "Nothing to do for $REPODIR"
 done
